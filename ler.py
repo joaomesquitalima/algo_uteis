@@ -3,33 +3,42 @@ import pyautogui
 import cv2
 import numpy as np
 import time
+import serial
 
-# cria leitor
+# COM3 é exemplo
+arduino = serial.Serial('COM3', 9600)
+
 reader = easyocr.Reader(['en'])
+
+estado_anterior = ""
 
 while True:
 
-    
     screenshot = pyautogui.screenshot(region=(400, 250, 600, 300))
 
-    # converte pra OpenCV
     img = cv2.cvtColor(np.array(screenshot), cv2.COLOR_RGB2BGR)
 
-    # OCR
     resultados = reader.readtext(img)
 
-    texto_total = ""
+    textos = [r[1].upper() for r in resultados]
 
-    for resultado in resultados:
-        texto = resultado[1]
-        texto_total += texto.upper() + " "
+    # print(textos)
 
-    print(texto_total)
-
-    if "DOWN" in texto_total:
+    # detecta DOWN
+    if "DOWN" in textos and estado_anterior != "DOWN":
         print("CAIU!")
 
-    if "UP" in texto_total:
+        arduino.write(b'1')
+        print("caiuuu")
+
+        estado_anterior = "DOWN"
+
+    # detecta UP
+    elif "UP" in textos and estado_anterior != "UP":
         print("VOLTOU!")
+
+        arduino.write(b'0')
+
+        estado_anterior = "UP"
 
     time.sleep(1)
